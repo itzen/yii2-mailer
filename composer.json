@@ -1,5 +1,5 @@
 {
-    "name": "itzen/yii2-mialer",
+    "name": "itzen/yii2-mailer",
     "description": "Yii2 mailer using swiftmailer and SMTP. Configurations are stored in database helps to itzen/yii2-setting extension.",
     "type": "yii2-extension",
     "keywords": ["yii2","extension", "mailer", "swiftmailer"],
@@ -19,7 +19,7 @@
     },
     "autoload": {
         "psr-4": {
-            "itzen\\mialer\\": ""
+            "itzen\\mailer\\": ""
         }
     }
 }
