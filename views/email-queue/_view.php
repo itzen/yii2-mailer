@@ -46,7 +46,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'to_name',
             'to_address',
             'subject',
-            'body:ntext',
+            'body:html',
             'alternative_body:ntext',
             'headers:ntext',
             'attachments:ntext',

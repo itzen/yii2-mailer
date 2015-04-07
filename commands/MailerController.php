@@ -7,6 +7,7 @@ use common\models\User;
 use itzen\mailer\models\EmailQueue;
 use Yii;
 use yii\console\Controller;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Console;
 use yii\helpers\VarDumper;
 
@@ -14,6 +15,14 @@ class MailerController extends Controller
 {
     const TYPE_AFTER_REGISTRATION = "AfterRegistration";
     const TYPE_BEFORE_SUBSCRIPTION_EXPIRE = "BeforeSubscriptionExpire";
+    const TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE = "AfterChangeAccountingOffice";
+    const TYPE_AFTER_NEW_USER_INVITATION = "AfterNewUserInvitation";
+    const TYPE_AFTER_USER_ACCEPTED_INVITATION = "AfterUserAcceptedInvitation";
+    const TYPE_AFTER_AFFILIATE_USER_REGISTER = "AfterAffiliateUserRegister";
+    const TYPE_AFTER_ACCEPT_FIRM = "AfterAcceptFirm";
+    const TYPE_AFTER_ACCEPT_INVITATION_FROM_ACCOUNTING_OFFICE = "AfterAcceptInvitationFromAccountingOffice";
+    const TYPE_AFTER_ACCEPT_INVITATION_FROM_CLIENT = "AfterAcceptInvitationFromClient";
+    const TYPE_AFTER_DENIED_INVITATION = "AfterDeniedInvitation";
 
     /**
      * @inheritdoc
@@ -116,22 +125,24 @@ class MailerController extends Controller
      * @param string $type
      * @return bool
      */
-    public function createMessage($user, $type) {
+    public static function createMessage($user, $type, $params = []) {
         $message = new EmailQueue();
 
-        $message->user_id = $user->id;
+        $message->user_id = $user->ID;
         $message->category = $type;
         $message->from_name = Yii::$app->setting->get('adminName');
         $message->from_address = Yii::$app->setting->get('adminEmail');
         $message->to_name = $user->publicIdentity;
-        $message->to_address = $user->email;
-        $message->subject = Yii::$app->setting->get('email.subject.' . $type);
+        $message->to_address = $user->Email;
         $message->subject = Yii::$app->setting->get('email.subject.' . $type);
 
         $content = Yii::$app->setting->get('email.content.' . $type);
-        $content = ShortcutProcessor::replaceShortcuts($content, [
-            'user' => $user
-        ]);
+
+        $params = ArrayHelper::merge(
+            $params, ['user' => $user]
+        );
+
+        $content = ShortcutProcessor::replaceShortcuts($content, $params);
         $message->body = $content;
 
         $message->max_attempts = 3;
