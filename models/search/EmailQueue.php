@@ -33,6 +33,9 @@ class EmailQueue extends EmailQueueModel
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
         ]);
+        $dataProvider->sort->defaultOrder = [
+            'id' => SORT_DESC
+        ];
 
         if (!($this->load($params) && $this->validate())) {
             return $dataProvider;
