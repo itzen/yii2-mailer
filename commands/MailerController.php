@@ -2,6 +2,8 @@
 namespace itzen\mailer\commands;
 
 use common\components\helpers\ShortcutProcessor;
+use common\models\invitation\Invitation;
+use common\models\invitation\InvitationStatus;
 use common\models\SystemEvent;
 use common\models\User;
 use itzen\mailer\models\EmailQueue;
@@ -15,7 +17,13 @@ class MailerController extends Controller
 {
     const TYPE_AFTER_REGISTRATION = "AfterRegistration";
     const TYPE_BEFORE_SUBSCRIPTION_EXPIRE = "BeforeSubscriptionExpire";
+
+    const TYPE_FROM_INVITATION_TABLE = "FromInvitationTable";
+    const TYPE_FROM_INVITATION_ACCOUNTING_OFFICE_TABLE = "FromInvitationAccountingOfficeTable";
+
     const TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE = "AfterChangeAccountingOffice";
+    const TYPE_AFTER_NEW_USER_REGISTER = "AfterNewUserRegister";
+
     const TYPE_AFTER_NEW_USER_INVITATION = "AfterNewUserInvitation";
     const TYPE_AFTER_USER_ACCEPTED_INVITATION = "AfterUserAcceptedInvitation";
     const TYPE_AFTER_AFFILIATE_USER_REGISTER = "AfterAffiliateUserRegister";
@@ -23,6 +31,7 @@ class MailerController extends Controller
     const TYPE_AFTER_ACCEPT_INVITATION_FROM_ACCOUNTING_OFFICE = "AfterAcceptInvitationFromAccountingOffice";
     const TYPE_AFTER_ACCEPT_INVITATION_FROM_CLIENT = "AfterAcceptInvitationFromClient";
     const TYPE_AFTER_DENIED_INVITATION = "AfterDeniedInvitation";
+    const TYPE_BONUS_POINTS_ADDED = "BonusPointsAdded";
 
     /**
      * @inheritdoc
@@ -117,6 +126,54 @@ class MailerController extends Controller
                 //                 WHERE
                 //                 DATEDIFF(d, GETDATE(), companySubscription.expireDate) = 165;
                 break;
+
+            case self::TYPE_FROM_INVITATION_TABLE:
+
+                /** @var Invitation[] $invitationsToSend */
+                $invitationsToSend = Invitation::find()->where(['Status_ID' => InvitationStatus::STATUS_AWAITING])
+                    ->all();
+                foreach ($invitationsToSend as $invitation) {
+                    if ($invitation->userAlreadyExist()) {
+
+                        $invitation->Status_ID = InvitationStatus::STATUS_ALREADY_EXIST;
+                        $invitation->save();
+                        continue;
+                    }
+                    $user = new User();
+                    $user->Email = $invitation->ReceiverEmail;
+                    $invitationID = $invitation->ID;
+                    $fromFirm = $invitation->senderFirm;
+
+                    $result = self::createMessage($user, self::TYPE_AFTER_NEW_USER_INVITATION, [
+                        'firm' => $fromFirm,
+                        'fromUser' => $fromFirm->user,
+                        'fid' => $fromFirm->ID,
+                        'iid' => $invitationID,
+                        'blockUrl' => Yii::$app->urlManager->createAbsoluteUrl([
+                            '/affiliates/invitation/block',
+                            'id' => $invitationID,
+                            'token' => $invitation->hash
+                        ]),
+                    ]);
+                    if ($result === true) {
+                        echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_NEW_USER_INVITATION);
+                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_NEW_USER_INVITATION), 'mailer');
+
+                        $invitation->Status_ID = InvitationStatus::STATUS_SENT;
+                        $invitation->save();
+                    }
+                    $invitation->deactivateOtherInvitations($fromFirm, $invitation->ReceiverEmail);
+
+
+                }
+                break;
+
+            case self::TYPE_FROM_INVITATION_ACCOUNTING_OFFICE_TABLE:
+
+
+                break;
+
+
         }
     }
 
