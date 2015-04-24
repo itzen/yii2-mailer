@@ -23,6 +23,7 @@ class MailerController extends Controller
 
     const TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE = "AfterChangeAccountingOffice";
     const TYPE_AFTER_NEW_USER_REGISTER = "AfterNewUserRegister";
+    const USER_WAITING_FOR_ACCEPTATION = "UserWaitingForAcceptation";
 
     const TYPE_AFTER_NEW_USER_INVITATION = "AfterNewUserInvitation";
     const TYPE_AFTER_USER_ACCEPTED_INVITATION = "AfterUserAcceptedInvitation";
@@ -32,6 +33,11 @@ class MailerController extends Controller
     const TYPE_AFTER_ACCEPT_INVITATION_FROM_CLIENT = "AfterAcceptInvitationFromClient";
     const TYPE_AFTER_DENIED_INVITATION = "AfterDeniedInvitation";
     const TYPE_BONUS_POINTS_ADDED = "BonusPointsAdded";
+
+    const TYPE_SPECIAL_OFFER = "SpecialOffer";
+    const TYPE_SUBSCRIPTION_NOTIFICATION = "SubscriptionNotification";
+    const TYPE_MAX_FIRM_LIMIT_REACHED = "MaxFirmLimitReached";
+
 
     /**
      * @inheritdoc
@@ -150,7 +156,7 @@ class MailerController extends Controller
                         'fid' => $fromFirm->ID,
                         'iid' => $invitationID,
                         'blockUrl' => Yii::$app->urlManager->createAbsoluteUrl([
-                            '/affiliates/invitation/block',
+                            '/affiliates/affiliates/block',
                             'id' => $invitationID,
                             'token' => $invitation->hash
                         ]),
