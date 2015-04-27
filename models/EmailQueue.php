@@ -188,6 +188,7 @@ class EmailQueue extends \yii\db\ActiveRecord
             }
         } catch (\Exception $e) {
             $sent = false;
+            Yii::error($e->getMessage(), 'mailer');
         }
 
         if ($sent) {
