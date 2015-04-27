@@ -2,6 +2,7 @@
 namespace itzen\mailer\commands;
 
 use common\components\helpers\ShortcutProcessor;
+use common\models\Firm;
 use common\models\invitation\Invitation;
 use common\models\invitation\InvitationStatus;
 use common\models\SystemEvent;
@@ -15,6 +16,8 @@ use yii\helpers\VarDumper;
 
 class MailerController extends Controller
 {
+    const TYPE_TEXT = "Text";
+
     const TYPE_AFTER_REGISTRATION = "AfterRegistration";
     const TYPE_BEFORE_SUBSCRIPTION_EXPIRE = "BeforeSubscriptionExpire";
 
@@ -35,8 +38,11 @@ class MailerController extends Controller
     const TYPE_BONUS_POINTS_ADDED = "BonusPointsAdded";
 
     const TYPE_SPECIAL_OFFER = "SpecialOffer";
-    const TYPE_SUBSCRIPTION_NOTIFICATION = "SubscriptionNotification";
+    const TYPE_SUBSCRIPTION_LOW_NOTIFICATION = "SubscriptionLowNotification";
     const TYPE_MAX_FIRM_LIMIT_REACHED = "MaxFirmLimitReached";
+    const TYPE_PASSWORD_RESET = "PasswordReset";
+
+
 
 
     /**
@@ -112,9 +118,12 @@ class MailerController extends Controller
                 $days = Yii::$app->setting->get('Days.' . $type);
                 $users = User::find()->where(['DATEDIFF(d, GETDATE(), companySubscription.expireDate)' => $days])
                     ->joinWith('ownedFirms.lastSubscription')->distinct()->all();
-                echo sprintf("Found %d emails for type: %s\n", count($users), self::TYPE_AFTER_REGISTRATION);
+                echo sprintf("Found %d emails for type: %s\n", count($users), self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE);
                 foreach ($users as $user) {
-                    $model = $this->createMessage($user, $type);
+                    $model = $this->createMessage($user, $type, [
+                        'subscriptionInfo' => \Yii::t('common', 'Subscription will expire {days, plural, =0{tomorrow} =1{in less than one day} other{in less than # days}}'),
+                        //'firm' => $firm
+                    ]);
                     if ($model === true) {
                         echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_REGISTRATION);
                         Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_REGISTRATION), 'mailer');
@@ -131,6 +140,48 @@ class MailerController extends Controller
                 //                    ON Firm.lastSubscriptionId=companySubscription.id
                 //                 WHERE
                 //                 DATEDIFF(d, GETDATE(), companySubscription.expireDate) = 165;
+
+
+                /** @var Firm[] $firms */
+                $firms = Firm::findBySql('
+          SELECT Firm.*
+          FROM Firm
+          JOIN companySubscription cs ON (cs.id = lastSubscriptionId)
+          JOIN subscription s ON (s.id = subscriptionId)
+          WHERE notificationSent = 0
+            AND (
+              cs.invoiceSend < s.invoiceSend * 0.1
+              OR cs.invoiceReceived < s.invoiceReceived * 0.1
+              OR cs.invoiceToAc < s.invoiceToAc * 0.1)')->all();
+
+                echo sprintf("Found %d emails for type: %s\n", count($firms), self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION);
+
+                foreach ($firms as $firm) {
+                    if ($firm->IsAccountingOffice) {
+                        $subscriptionInfo = \Yii::t('common', 'Remaining invoice to send: {invoiceSend}, Remaining invoice to receive {invoiceReceived}.', [
+                            'invoiceSend' => $firm->lastSubscription->invoiceSend,
+                            'invoiceReceived' => $firm->lastSubscription->invoiceReceived
+                        ]);
+                    } else {
+                        $subscriptionInfo = \Yii::t('common', 'Remaining invoice to accounting office: {invoiceToAc}.', [
+                            'invoiceToAc' => $firm->lastSubscription->invoiceToAc,
+                        ]);
+                    }
+
+                    $result = $this->createMessage($firm->user, $type, [
+                        'subscriptionInfo' => $subscriptionInfo,
+                        //'firm' => $firm
+                    ]);
+
+                    if ($result) {
+                        $subscription = $firm->lastSubscription;
+                        $subscription->notificationSent = 1;
+                        $subscription->save();
+                    }
+
+                }
+
+
                 break;
 
             case self::TYPE_FROM_INVITATION_TABLE:
@@ -216,7 +267,7 @@ class MailerController extends Controller
         if ($message->save()) {
             return true;
         } else {
-            return $message->getErrors();
+            return false;
         }
     }
 }
