@@ -4,6 +4,8 @@ namespace itzen\mailer\commands;
 use common\components\helpers\ShortcutProcessor;
 use common\models\Firm;
 use common\models\invitation\Invitation;
+use common\models\invitation\InvitationAccountOffice;
+use common\models\invitation\InvitationAccountOfficeStatus;
 use common\models\invitation\InvitationStatus;
 use common\models\SystemEvent;
 use common\models\User;
@@ -41,8 +43,6 @@ class MailerController extends Controller
     const TYPE_SUBSCRIPTION_LOW_NOTIFICATION = "SubscriptionLowNotification";
     const TYPE_MAX_FIRM_LIMIT_REACHED = "MaxFirmLimitReached";
     const TYPE_PASSWORD_RESET = "PasswordReset";
-
-
 
 
     /**
@@ -189,6 +189,10 @@ class MailerController extends Controller
                 /** @var Invitation[] $invitationsToSend */
                 $invitationsToSend = Invitation::find()->where(['Status_ID' => InvitationStatus::STATUS_AWAITING])
                     ->all();
+
+                echo sprintf("Found %d emails for type: %s\n", count($invitationsToSend), self::TYPE_FROM_INVITATION_TABLE);
+
+
                 foreach ($invitationsToSend as $invitation) {
                     if ($invitation->userAlreadyExist()) {
 
@@ -226,7 +230,38 @@ class MailerController extends Controller
                 break;
 
             case self::TYPE_FROM_INVITATION_ACCOUNTING_OFFICE_TABLE:
+                /** @var InvitationAccountOffice[] $invitationsToSend */
+                $invitationsToSend = InvitationAccountOffice::find()
+                    ->where(['Status_ID' => InvitationAccountOfficeStatus::STATUS_ACTIVE])
+                    ->all();
 
+                echo sprintf("Found %d emails for type: %s\n", count($invitationsToSend), self::TYPE_FROM_INVITATION_ACCOUNTING_OFFICE_TABLE);
+
+
+                foreach ($invitationsToSend as $invitation) {
+
+                    $user = new User();
+                    $user->Email = $invitation->ReceiverEmail;
+                    $invitationID = $invitation->ID;
+                    $fromFirm = $invitation->senderFirm;
+
+
+                    $result = MailerController::createMessage($user, self::TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE, [
+                        'date' => \Yii::t('common', '{date, date, long}', ['date' => strtotime($invitation->AccountingOfficeStartDate)]),
+                        'firm' => $fromFirm,
+                        'fromUser' => $fromFirm->user
+                    ]);
+
+
+                    if ($result === true) {
+                        echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE);
+                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE), 'mailer');
+
+                        $invitation->Status_ID = InvitationAccountOfficeStatus::STATUS_SENT;
+                        $invitation->save();
+                    }
+
+                }
 
                 break;
 
