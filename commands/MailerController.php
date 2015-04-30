@@ -38,6 +38,9 @@ class MailerController extends Controller
     const TYPE_AFTER_ACCEPT_INVITATION_FROM_CLIENT = "AfterAcceptInvitationFromClient";
     const TYPE_AFTER_DENIED_INVITATION = "AfterDeniedInvitation";
     const TYPE_BONUS_POINTS_ADDED = "BonusPointsAdded";
+    const TYPE_AFTER_ACCEPT_MANUAL_PAYMENT = "AfterAcceptManualPayment";
+    const TYPE_MANUAL_PAYMENT = "ManualPayment";
+    const TYPE_ONLINE_PAYMENT = "OnlinePayment";
 
     const TYPE_SPECIAL_OFFER = "SpecialOffer";
     const TYPE_SUBSCRIPTION_LOW_NOTIFICATION = "SubscriptionLowNotification";
