@@ -40,6 +40,7 @@ class MailerController extends Controller
     const TYPE_BONUS_POINTS_ADDED = "BonusPointsAdded";
     const TYPE_AFTER_ACCEPT_MANUAL_PAYMENT = "AfterAcceptManualPayment";
     const TYPE_AFTER_NEW_FIRM_ACCEPTED = "AfterNewFirmAccepted";
+    const TYPE_AFTER_NEW_FIRM_CREATED = "AfterNewFirmCreated"; 
     const TYPE_MANUAL_PAYMENT = "ManualPayment";
     const TYPE_ONLINE_PAYMENT = "OnlinePayment";
 
