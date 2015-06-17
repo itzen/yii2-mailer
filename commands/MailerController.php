@@ -40,7 +40,7 @@ class MailerController extends Controller
     const TYPE_BONUS_POINTS_ADDED = "BonusPointsAdded";
     const TYPE_AFTER_ACCEPT_MANUAL_PAYMENT = "AfterAcceptManualPayment";
     const TYPE_AFTER_NEW_FIRM_ACCEPTED = "AfterNewFirmAccepted";
-    const TYPE_AFTER_NEW_FIRM_CREATED = "AfterNewFirmCreated"; 
+    const TYPE_AFTER_NEW_FIRM_CREATED = "AfterNewFirmCreated";
     const TYPE_MANUAL_PAYMENT = "ManualPayment";
     const TYPE_ONLINE_PAYMENT = "OnlinePayment";
 
@@ -199,19 +199,24 @@ class MailerController extends Controller
 
 
                 foreach ($invitationsToSend as $invitation) {
-                    if ($invitation->userAlreadyExist()) {
+
+                    $invID = $invitation->Type_ID;
+
+                    if ($invID == 4 && $invitation->userAlreadyExist()) {
 
                         $invitation->Status_ID = InvitationStatus::STATUS_ALREADY_EXIST;
                         $invitation->save();
                         continue;
+
                     }
                     $user = new User();
                     $user->Email = $invitation->ReceiverEmail;
                     $invitationID = $invitation->ID;
                     $fromFirm = $invitation->senderFirm;
 
-                    $result = self::createMessage($user, self::TYPE_AFTER_NEW_USER_INVITATION, [
+                    $result = self::createMessage($user, 'InvitationType_'.$invitation->Type_ID, [
                         'firm' => $fromFirm,
+                        'toFirmName' => $invitation->ReceiverName,
                         'fromUser' => $fromFirm->user,
                         'fid' => $fromFirm->ID,
                         'iid' => $invitationID,
