@@ -48,6 +48,7 @@ class MailerController extends Controller
     const TYPE_SUBSCRIPTION_LOW_NOTIFICATION = "SubscriptionLowNotification";
     const TYPE_MAX_FIRM_LIMIT_REACHED = "MaxFirmLimitReached";
     const TYPE_PASSWORD_RESET = "PasswordReset";
+    const TYPE_CONTACT = "Contact";
 
 
     /**
