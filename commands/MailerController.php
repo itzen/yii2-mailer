@@ -182,7 +182,7 @@ class MailerController extends Controller
                     if ($result) {
                         $subscription = $firm->lastSubscription;
                         $subscription->notificationSent = 1;
-                        $subscription->save();
+                        $subscription->save(false);
                     }
 
                 }
@@ -206,7 +206,7 @@ class MailerController extends Controller
                     if ($invID == 4 && $invitation->userAlreadyExist()) {
 
                         $invitation->Status_ID = InvitationStatus::STATUS_ALREADY_EXIST;
-                        $invitation->save();
+                        $invitation->save(false);
                         continue;
 
                     }
@@ -232,7 +232,7 @@ class MailerController extends Controller
                         Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_NEW_USER_INVITATION), 'mailer');
 
                         $invitation->Status_ID = InvitationStatus::STATUS_SENT;
-                        $invitation->save();
+                        $invitation->save(false);
                     }
                     $invitation->deactivateOtherInvitations($fromFirm, $invitation->ReceiverEmail);
 
@@ -269,7 +269,7 @@ class MailerController extends Controller
                         Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE), 'mailer');
 
                         $invitation->Status_ID = InvitationAccountOfficeStatus::STATUS_SENT;
-                        $invitation->save();
+                        $invitation->save(false);
                     }
 
                 }
@@ -310,7 +310,7 @@ class MailerController extends Controller
         $message->priority = 5;
         $message->status = EmailQueue::STATUS_NOT_SENT;
 
-        if ($message->save()) {
+        if ($message->save(false)) {
             return true;
         } else {
             return false;

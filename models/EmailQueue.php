@@ -2,13 +2,11 @@
 
 namespace itzen\mailer\models;
 
-use Yii;
-use kartik\grid\GridView;
-use yii\behaviors\BlameableBehavior;
-use yii\helpers\ArrayHelper;
-use yii\behaviors\TimestampBehavior;
-
 use common\models\User;
+use kartik\grid\GridView;
+use Yii;
+use yii\behaviors\TimestampBehavior;
+use yii\helpers\ArrayHelper;
 
 /**
  * This is the model class for table "{{%email_queue}}".
@@ -186,7 +184,8 @@ class EmailQueue extends \yii\db\ActiveRecord
             if ($message->send()) {
                 $sent = true;
             }
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             $sent = false;
             Yii::error($e->getMessage(), 'mailer');
         }
@@ -195,17 +194,17 @@ class EmailQueue extends \yii\db\ActiveRecord
             $this->sent_time = date('Y-m-d H:i:s');
             $this->status = self::STATUS_SENT;
             Yii::info(sprintf("Message to %s %s sent successfully (category:%s).\n", $this->to_name, $this->to_address, $this->category), 'mailer');
-            $this->save();
+            $this->save(false);
             return true;
         } elseif ($this->attempt >= $this->max_attempts) {
             $this->status = self::STATUS_FAILED;
             Yii::warning(sprintf("Sending message to %s %s failed and further attempts won't be made (category:%s).\n", $this->to_name, $this->to_address, $this->category), 'mailer');
-            $this->save();
+            $this->save(false);
             return false;
         } else {
             $this->status = self::STATUS_NOT_SENT;
             Yii::warning(sprintf("Sending message to %s %s with no success. Next attempt will be made (category:%s).\n", $this->to_name, $this->to_address, $this->category), 'mailer');
-            $this->save();
+            $this->save(false);
             return false;
         }
     }
