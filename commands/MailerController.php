@@ -200,16 +200,13 @@ class MailerController extends Controller
 
 
                 foreach ($invitationsToSend as $invitation) {
-
                     $invID = $invitation->Type_ID;
-
-                    if ($invID == 4 && $invitation->userAlreadyExist()) {
-
+                    if (($invID == 4 || $invID == 5) && $invitation->userAlreadyExist()) {
                         $invitation->Status_ID = InvitationStatus::STATUS_ALREADY_EXIST;
                         $invitation->save(false);
                         continue;
-
                     }
+                    
                     $user = new User();
                     $user->Email = $invitation->ReceiverEmail;
                     $invitationID = $invitation->ID;
@@ -227,6 +224,7 @@ class MailerController extends Controller
                             'token' => $invitation->hash
                         ]),
                     ]);
+
                     if ($result === true) {
                         echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_NEW_USER_INVITATION);
                         Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_NEW_USER_INVITATION), 'mailer');
