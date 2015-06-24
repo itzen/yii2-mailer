@@ -219,15 +219,15 @@ class MailerController extends Controller
                         'fid' => $fromFirm->ID,
                         'iid' => $invitationID,
                         'blockUrl' => Yii::$app->urlManager->createAbsoluteUrl([
-                            '/affiliates/affiliates/block',
+                            'affiliates/affiliates/block',
                             'id' => $invitationID,
                             'token' => $invitation->hash
                         ]),
                     ]);
 
                     if ($result === true) {
-                        echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_NEW_USER_INVITATION);
-                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_NEW_USER_INVITATION), 'mailer');
+                        echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, 'InvitationType_'.$invitation->Type_ID);
+                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, 'InvitationType_'.$invitation->Type_ID), 'mailer');
 
                         $invitation->Status_ID = InvitationStatus::STATUS_SENT;
                         $invitation->save(false);
