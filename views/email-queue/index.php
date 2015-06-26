@@ -39,14 +39,15 @@ $this->registerJs('jQuery("#pjax-grid").on("submit", ".kv-expanded-row div form"
     <?= GridView::widget([
         'id' => 'grid',
         'dataProvider' => $dataProvider,
-        'toolbar' => [
-            ['content' =>
-                Html::a('<i class="glyphicon glyphicon-plus"></i> Create', ['create'], ['class' => 'btn btn-success', 'data-pjax' => '0']) . ' ' .
-                Html::a('<i class="glyphicon glyphicon-repeat"></i>', ['index'], ['class' => 'btn btn-default', 'title' => Yii::t('backend', 'Reset Grid')])
-            ],
-            '{export}',
-            '{toggleData}'
-        ],
+//        'toolbar' => [
+//            ['content' =>
+//                Html::a('<i class="glyphicon glyphicon-plus"></i> Create', ['create'], ['class' => 'btn btn-success', 'data-pjax' => '0']) . ' ' .
+//                Html::a('<i class="glyphicon glyphicon-repeat"></i>', ['index'], ['class' => 'btn btn-default', 'title' => Yii::t('backend', 'Reset Grid')])
+//            ],
+//            '{export}',
+//            '{toggleData}'
+//        ],
+        'toolbar' => false,
         'panel' => [
             'heading' => "<h3 class=\"panel-title\">$this->title</h3>",
             'type' => 'default',
@@ -55,7 +56,7 @@ $this->registerJs('jQuery("#pjax-grid").on("submit", ".kv-expanded-row div form"
         'pjaxSettings' => [
             'neverTimeout' => true,
             'options' => [
-		'id' => 'pjax-grid'
+                'id' => 'pjax-grid'
             ]
         ],
         'exportConfig' => [
