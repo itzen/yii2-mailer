@@ -218,8 +218,8 @@ class MailerController extends Controller
                         'fromUser' => $fromFirm->user,
                         'fid' => $fromFirm->ID,
                         'iid' => $invitationID,
-                        'blockUrl' => Yii::$app->urlManager->createAbsoluteUrl([
-                            'affiliates/affiliates/block',
+                        'blockUrl' => Yii::$app->urlManagerFrontend->createAbsoluteUrl([
+                            '/affiliates/affiliates/block',
                             'id' => $invitationID,
                             'token' => $invitation->hash
                         ]),
