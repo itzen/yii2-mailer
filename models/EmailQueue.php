@@ -160,6 +160,24 @@ class EmailQueue extends \yii\db\ActiveRecord
         return ArrayHelper::map(User::find()->asArray()->all(), 'ID', 'Email');
     }
 
+    public function getStatusName() {
+
+        if($this->status === 0) {
+            return Yii::t("backend","Not sent");
+        }
+        else if($this->status === 1) {
+            return Yii::t("backend","Sent");
+        }
+        else if($this->status === 2) {
+            return Yii::t("backend","Failed to sent");
+        }
+
+    }
+
+    public static function getAvailableStatusNames() {
+        return [0 => Yii::t("backend","Not sent"), 1 =>  Yii::t("backend","Sent"), 2 => Yii::t("backend","Failed to sent")];
+    }
+
 
     /**
      * @return boolean
