@@ -29,6 +29,7 @@ class MailerController extends Controller
     const TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE = "AfterChangeAccountingOffice";
     const TYPE_AFTER_NEW_USER_REGISTER = "AfterNewUserRegister";
     const USER_WAITING_FOR_ACCEPTATION = "UserWaitingForAcceptation";
+    const TYPE_AFTER_CANCEL_ACCEPT_MANUAL_PAYMENT = "AfterCancelAcceptManualPayment";
 
     const TYPE_AFTER_NEW_USER_INVITATION = "AfterNewUserInvitation";
     const TYPE_AFTER_USER_ACCEPTED_INVITATION = "AfterUserAcceptedInvitation";
