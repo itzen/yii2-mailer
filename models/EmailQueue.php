@@ -142,6 +142,7 @@ class EmailQueue extends \yii\db\ActiveRecord
             'sent_time' => Yii::t('common', 'Send Time'),
             'create_time' => Yii::t('common', 'Create Time'),
             'update_time' => Yii::t('common', 'Update Time'),
+            'statusName' => Yii::t("common","Status")
         ];
     }
 

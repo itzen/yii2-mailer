@@ -26,7 +26,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'type' => DetailView::TYPE_INFO,
         ],
         'attributes' => [
-            'id',
+            //'id',
             [
                 'attribute' => 'user_id',
                 'value' => $model->user !== null ? $model->user->Email : '',
@@ -43,13 +43,15 @@ $this->params['breadcrumbs'][] = $this->title;
             'to_address',
             'subject',
             'body:html',
-            'alternative_body:ntext',
-            'headers:ntext',
-            'attachments:ntext',
+            //'alternative_body:ntext',
+            //'headers:ntext',
+            //'attachments:ntext',
             'max_attempts',
             'attempt',
-            'priority',
-            'status',
+            //'priority',
+            [
+                'attribute' => 'statusName',
+            ],
             [
                 'attribute' => 'sent_time',
                 'format' => [
