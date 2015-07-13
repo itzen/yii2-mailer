@@ -89,7 +89,11 @@ $this->registerJs('jQuery("#pjax-grid").on("submit", ".kv-expanded-row div form"
             // 'max_attempts',
             // 'attempt',
             // 'priority',
-            // 'status',
+            [
+                'attribute' => 'status',
+                'value' => 'statusName',
+                'filter' => \itzen\mailer\models\EmailQueue::getAvailableStatusNames(),
+            ],
             // 'sent_time',
             // 'create_time',
             // 'update_time',
