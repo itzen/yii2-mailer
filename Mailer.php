@@ -30,5 +30,8 @@ class Mailer extends \yii\swiftmailer\Mailer
 
         $this->setTransport($transport);
 
+        $this->htmlLayout = Yii::$app->setting->get('htmlLayout');
+        $this->textLayout = Yii::$app->setting->get('textLayout');
+
     }
 }
