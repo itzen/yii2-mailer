@@ -54,9 +54,9 @@ $this->params['breadcrumbs'][] = $this->title;
             'attempt',
             //'priority',
             //'status',
-            'sent_time',
-            'create_time',
-            'update_time',
+            'sent_time:datetime',
+            'create_time:datetime',
+            'update_time:datetime',
         ],
         'deleteOptions' => [
             'url' => ['delete', 'id' => $model->id],
@@ -65,7 +65,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'method' => 'post',
             ],
         ],
-        'enableEditMode' => true,
+        'enableEditMode' => false,
     ]);
     ?>
 

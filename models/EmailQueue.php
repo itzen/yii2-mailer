@@ -7,6 +7,7 @@ use kartik\grid\GridView;
 use Yii;
 use yii\behaviors\TimestampBehavior;
 use yii\helpers\ArrayHelper;
+use itzen\mailer\behaviors\TranslateAttributeBehavior;
 
 /**
  * This is the model class for table "{{%email_queue}}".
@@ -59,6 +60,9 @@ class EmailQueue extends \yii\db\ActiveRecord
                 'value' => function () {
                     return date('Y-m-d H:i:s');
                 },
+            ],
+            [
+                'class' => TranslateAttributeBehavior::className()
             ]
         ];
     }
@@ -187,10 +191,17 @@ class EmailQueue extends \yii\db\ActiveRecord
         $sent = false;
         $this->attempt++;
         try {
-            $message = Yii::$app->mailer->compose()
+
+
+
+
+            $message = Yii::$app->mailer->compose(
+                ['html' => '@common/mail/standard'],
+                ['content' => $this->body]
+            )
                 ->setSubject($this->subject)
-                ->setTo([$this->to_address => $this->to_name])
-                ->setHtmlBody($this->body);
+                ->setTo([$this->to_address => $this->to_name]);
+               // ->setHtmlBody($this->body);
 
             if ($this->alternative_body !== null) {
                 $message->setTextBody($this->alternative_body);

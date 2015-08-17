@@ -14,7 +14,6 @@ $this->params['breadcrumbs'][] = ['label' => Yii::t('common', 'Email Queues'), '
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="email-queue-view">
-
     <?= DetailView::widget([
         'model' => $model,
         'condensed' => true,

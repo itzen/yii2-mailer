@@ -76,7 +76,7 @@ $this->registerJs('jQuery("#pjax-grid").on("submit", ".kv-expanded-row div form"
             ['class' => 'yii\grid\SerialColumn'],
             'id',
             'user_id',
-            'category',
+            'translated_category',
             'from_name',
             'from_address',
             // 'to_name',
