@@ -3,6 +3,7 @@
 namespace itzen\mailer\models;
 
 use common\models\User;
+use itzen\setting\models\Setting;
 use kartik\grid\GridView;
 use Yii;
 use yii\behaviors\TimestampBehavior;
@@ -146,7 +147,8 @@ class EmailQueue extends \yii\db\ActiveRecord
             'sent_time' => Yii::t('common', 'Send Time'),
             'create_time' => Yii::t('common', 'Create Time'),
             'update_time' => Yii::t('common', 'Update Time'),
-            'statusName' => Yii::t("common","Status")
+            'statusName' => Yii::t("common","Status"),
+            'translated_category' => Yii::t("common", "Category")
         ];
     }
 
@@ -182,7 +184,6 @@ class EmailQueue extends \yii\db\ActiveRecord
     public static function getAvailableStatusNames() {
         return [0 => Yii::t("backend","Not sent"), 1 =>  Yii::t("backend","Sent"), 2 => Yii::t("backend","Failed to sent")];
     }
-
 
     /**
      * @return boolean
