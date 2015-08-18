@@ -128,7 +128,7 @@ class MailerController extends Controller
                 echo sprintf("Found %d emails for type: %s\n", count($users), self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE);
                 foreach ($users as $user) {
                     $model = $this->createMessage($user, $type, [
-                        'subscriptionInfo' => \Yii::t('common', 'Subscription will expire {days, plural, =0{tomorrow} =1{in less than one day} other{in less than # days}}'),
+                        'subscriptionInfo' => \Yii::t('common', 'Subscription will expire {days, plural, =0{tomorrow} =1{in less than one day} other{in less than # days}}', ['days' => $days]),
                         //'firm' => $firm
                     ]);
                     if ($model === true) {
