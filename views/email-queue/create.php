@@ -7,9 +7,7 @@ use yii\helpers\Html;
  * @var itzen\mailer\models\EmailQueue $model
  */
 
-$this->title = Yii::t('common', 'Create {modelClass}', [
-    'modelClass' => 'Email Queue',
-]);
+$this->title = Yii::t('common', 'Create');
 $this->params['breadcrumbs'][] = ['label' => Yii::t('common', 'Email Queues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>

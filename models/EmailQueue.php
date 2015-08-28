@@ -198,7 +198,10 @@ class EmailQueue extends \yii\db\ActiveRecord
 
             $message = Yii::$app->mailer->compose(
                 ['html' => '@common/mail/standard'],
-                ['content' => $this->body]
+                [
+                    'content' => $this->body,
+                    'category' => $this->category
+                ]
             )
                 ->setSubject($this->subject)
                 ->setTo([$this->to_address => $this->to_name]);
