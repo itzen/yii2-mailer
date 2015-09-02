@@ -7,14 +7,13 @@ use common\models\invitation\Invitation;
 use common\models\invitation\InvitationAccountOffice;
 use common\models\invitation\InvitationAccountOfficeStatus;
 use common\models\invitation\InvitationStatus;
+use common\models\NotAcceptedFirms;
 use common\models\SystemEvent;
 use common\models\User;
 use itzen\mailer\models\EmailQueue;
 use Yii;
 use yii\console\Controller;
 use yii\helpers\ArrayHelper;
-use yii\helpers\Console;
-use yii\helpers\VarDumper;
 
 class MailerController extends Controller
 {
@@ -64,12 +63,7 @@ class MailerController extends Controller
      */
     public function actionSend($limit = 5, $category = null) {
         /** @var EmailQueue[] $emailQueue */
-        $emailQueue = EmailQueue::find()
-            ->where(['status' => EmailQueue::STATUS_NOT_SENT,])
-            ->andWhere('attempt<max_attempts')
-            ->orderBy(['priority' => SORT_ASC])
-            ->limit($limit)
-            ->all();
+        $emailQueue = EmailQueue::find()->where(['status' => EmailQueue::STATUS_NOT_SENT,])->andWhere('attempt<max_attempts')->orderBy(['priority' => SORT_ASC])->limit($limit)->all();
         $emailsCount = count($emailQueue);
 
         echo sprintf("Found %d messages.\n", $emailsCount);
@@ -101,11 +95,11 @@ class MailerController extends Controller
     public function actionAddEmailsByType($type = self::TYPE_AFTER_REGISTRATION) {
         switch ($type) {
             case self::TYPE_AFTER_REGISTRATION:
-                $days = Yii::$app->setting->get('Days.' . $type);
+                $days = Yii::$app->setting->get('Days.' . self::TYPE_AFTER_REGISTRATION);
                 $users = User::find()->where(['DATEDIFF(d, CreatedDateUtc, GETDATE())' => $days])->distinct()->all();
                 echo sprintf("Found %d emails for type: %s\n", count($users), self::TYPE_AFTER_REGISTRATION);
                 foreach ($users as $user) {
-                    $model = $this->createMessage($user, $type);
+                    $model = $this->createMessage($user, self::TYPE_AFTER_REGISTRATION);
                     if ($model === true) {
                         echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_REGISTRATION);
                         Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_REGISTRATION), 'mailer');
@@ -119,47 +113,50 @@ class MailerController extends Controller
                 //
                 //  SELECT * FROM [Emsi.InvoiceTest].[dbo].[User]  WHERE
                 //  DATEDIFF(d, CreatedDateUtc, GETDATE()) = 7
-                break;
+            break;
 
             case self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE:
-                $days = Yii::$app->setting->get('Days.' . $type);
-                $users = User::find()->where(['DATEDIFF(d, GETDATE(), companySubscription.expireDate)' => $days])
-                    ->joinWith('ownedFirms.lastSubscription')->distinct()->all();
-                echo sprintf("Found %d emails for type: %s\n", count($users), self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE);
-                foreach ($users as $user) {
-                    $model = $this->createMessage($user, $type, [
-                        'subscriptionInfo' => \Yii::t('common', 'Subscription will expire {days, plural, =0{tomorrow} =1{in less than one day} other{in less than # days}}', ['days' => $days]),
-                        //'firm' => $firm
-                    ]);
-                    if ($model === true) {
-                        echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_REGISTRATION);
-                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_REGISTRATION), 'mailer');
-
-                    } else {
-                        echo sprintf("Error while adding user %s to queue in category %s.\n", $user->publicIdentity, count($users), self::TYPE_AFTER_REGISTRATION);
-                        Yii::error(sprintf("Error while adding user %s to queue in category %s.\n Errors: %s", $user->publicIdentity, self::TYPE_AFTER_REGISTRATION, print_r($model, true)), 'mailer');
-                    }
-                }
-                //                SELECT DATEDIFF(d, GETDATE(), companySubscription.expireDate), companySubscription.expireDate, GETDATE(),*
-                //                 FROM [Emsi.Invoice].[dbo].[User]
-                //                 JOIN [Emsi.Invoice].[dbo].[Firm] ON [Firm].[User_ID]=[User].[ID]
-                //                 JOIN [Emsi.Invoice].[dbo].[companySubscription]
-                //                    ON Firm.lastSubscriptionId=companySubscription.id
-                //                 WHERE
-                //                 DATEDIFF(d, GETDATE(), companySubscription.expireDate) = 165;
+                $days = Yii::$app->setting->get('Days.' . self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE);
+                //                $users = User::find()->where(['DATEDIFF(d, GETDATE(), companySubscription.expireDate)' => $days])
+                //                    ->joinWith('ownedFirms.lastSubscription')->distinct()->all();
 
 
                 /** @var Firm[] $firms */
                 $firms = Firm::findBySql('
-          SELECT Firm.*
-          FROM Firm
-          JOIN companySubscription cs ON (cs.id = lastSubscriptionId)
-          JOIN subscription s ON (s.id = subscriptionId)
-          WHERE notificationSent = 0
-            AND (
-              cs.invoiceSend < s.invoiceSend * 0.1
-              OR cs.invoiceReceived < s.invoiceReceived * 0.1
-              OR cs.invoiceToAc < s.invoiceToAc * 0.1)')->all();
+                               SELECT Firm.*, cs.*
+                               FROM Firm
+                               JOIN companySubscription cs ON (cs.id = lastSubscriptionId)
+                               WHERE DATEDIFF(d, GETDATE(), cs.expireDate) = :days;')->params(['days' => $days])->all();
+
+                echo sprintf("Found %d emails for type: %s\n", count($firms), self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE);
+                foreach ($firms as $firm) {
+                    $model = $this->createMessage($firm->user, self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE, [
+                        'subscriptionInfo' => \Yii::t('common', 'Subscription will expire {days, plural, =0{tomorrow} =1{in less than one day} other{in less than # days}}', ['days' => $days]),
+                        'firm' => $firm,
+                        'lastSubscription' => $firm->lastSubscription,
+                    ]);
+                    if ($model === true) {
+                        echo sprintf("Email to user %s added to queue in category %s.\n", $firm->user->publicIdentity, self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE);
+                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $firm->user->publicIdentity, self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE), 'mailer');
+
+                    } else {
+                        echo sprintf("Error while adding user %s to queue in category %s.\n", $firm->user->publicIdentity, count($firm), self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE);
+                        Yii::error(sprintf("Error while adding user %s to queue in category %s.\n Errors: %s", $firm->user->publicIdentity, self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE, print_r($model, true)), 'mailer');
+                    }
+                }
+
+
+                /** @var Firm[] $firms */
+                $firms = Firm::findBySql('
+                      SELECT Firm.*
+                      FROM Firm
+                      JOIN companySubscription cs ON (cs.id = lastSubscriptionId)
+                      JOIN subscription s ON (s.id = subscriptionId)
+                      WHERE notificationSent = 0
+                      AND (
+                          cs.invoiceSend < s.invoiceSend * 0.1
+                          OR cs.invoiceReceived < s.invoiceReceived * 0.1
+                          OR cs.invoiceToAc < s.invoiceToAc * 0.1)')->all();
 
                 echo sprintf("Found %d emails for type: %s\n", count($firms), self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION);
 
@@ -167,7 +164,8 @@ class MailerController extends Controller
                     if ($firm->IsAccountingOffice) {
                         $subscriptionInfo = \Yii::t('common', 'Remaining invoice to send: {invoiceSend}, Remaining invoice to receive {invoiceReceived}.', [
                             'invoiceSend' => $firm->lastSubscription->invoiceSend,
-                            'invoiceReceived' => $firm->lastSubscription->invoiceReceived
+                            'invoiceReceived' => $firm->lastSubscription->invoiceReceived,
+
                         ]);
                     } else {
                         $subscriptionInfo = \Yii::t('common', 'Remaining invoice to accounting office: {invoiceToAc}.', [
@@ -175,12 +173,16 @@ class MailerController extends Controller
                         ]);
                     }
 
-                    $result = $this->createMessage($firm->user, $type, [
+                    $result = $this->createMessage($firm->user, self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION, [
                         'subscriptionInfo' => $subscriptionInfo,
-                        //'firm' => $firm
+                        'firm' => $firm,
+                        'lastSubscription' => $firm->lastSubscription,
                     ]);
 
                     if ($result) {
+                        echo sprintf("Email to user %s added to queue in category %s.\n", $firm->user->publicIdentity, self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION);
+                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $firm->user->publicIdentity, self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION), 'mailer');
+
                         $subscription = $firm->lastSubscription;
                         $subscription->notificationSent = 1;
                         $subscription->save(false);
@@ -189,16 +191,14 @@ class MailerController extends Controller
                 }
 
 
-                break;
+            break;
 
             case self::TYPE_FROM_INVITATION_TABLE:
 
                 /** @var Invitation[] $invitationsToSend */
-                $invitationsToSend = Invitation::find()->where(['Status_ID' => InvitationStatus::STATUS_AWAITING])
-                    ->all();
+                $invitationsToSend = Invitation::find()->where(['Status_ID' => InvitationStatus::STATUS_AWAITING])->all();
 
                 echo sprintf("Found %d emails for type: %s\n", count($invitationsToSend), self::TYPE_FROM_INVITATION_TABLE);
-
 
                 foreach ($invitationsToSend as $invitation) {
                     $invID = $invitation->Type_ID;
@@ -207,16 +207,19 @@ class MailerController extends Controller
                         $invitation->save(false);
                         continue;
                     }
-                    
+
                     $user = new User();
                     $user->Email = $invitation->ReceiverEmail;
                     $invitationID = $invitation->ID;
                     $fromFirm = $invitation->senderFirm;
 
-                    $result = self::createMessage($user, 'InvitationType_'.$invitation->Type_ID, [
-                        'firm' => $fromFirm,
-                        'toFirmName' => $invitation->ReceiverName,
+                    $result = self::createMessage($user, 'InvitationType_' . $invitation->Type_ID, [
+                        'fromFirm' => $fromFirm,
                         'fromUser' => $fromFirm->user,
+                        'toFirm' => $invitation->receiverFirm,
+                        'toUser' => $invitation->receiverFirm != null ? $invitation->receiverFirm->user : null,
+                        'toFirmName' => $invitation->ReceiverName,
+                        'toFirmNip' => $invitation->ReceiverNip,
                         'fid' => $fromFirm->ID,
                         'iid' => $invitationID,
                         'blockUrl' => Yii::$app->urlManagerFrontend->createAbsoluteUrl([
@@ -227,8 +230,8 @@ class MailerController extends Controller
                     ]);
 
                     if ($result === true) {
-                        echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, 'InvitationType_'.$invitation->Type_ID);
-                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, 'InvitationType_'.$invitation->Type_ID), 'mailer');
+                        echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, 'InvitationType_' . $invitation->Type_ID);
+                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, 'InvitationType_' . $invitation->Type_ID), 'mailer');
 
                         $invitation->Status_ID = InvitationStatus::STATUS_SENT;
                         $invitation->save(false);
@@ -237,13 +240,11 @@ class MailerController extends Controller
 
 
                 }
-                break;
+            break;
 
             case self::TYPE_FROM_INVITATION_ACCOUNTING_OFFICE_TABLE:
                 /** @var InvitationAccountOffice[] $invitationsToSend */
-                $invitationsToSend = InvitationAccountOffice::find()
-                    ->where(['Status_ID' => InvitationAccountOfficeStatus::STATUS_ACTIVE])
-                    ->all();
+                $invitationsToSend = InvitationAccountOffice::find()->where(['Status_ID' => InvitationAccountOfficeStatus::STATUS_ACTIVE])->all();
 
                 echo sprintf("Found %d emails for type: %s\n", count($invitationsToSend), self::TYPE_FROM_INVITATION_ACCOUNTING_OFFICE_TABLE);
 
@@ -258,8 +259,8 @@ class MailerController extends Controller
 
                     $result = MailerController::createMessage($user, self::TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE, [
                         'date' => \Yii::t('common', '{date, date, long}', ['date' => strtotime($invitation->AccountingOfficeStartDate)]),
-                        'firm' => $fromFirm,
-                        'fromUser' => $fromFirm->user
+                        'fromFirm' => $fromFirm,
+                        'toFirm' => $invitation->receiverFirm,
                     ]);
 
 
@@ -273,7 +274,37 @@ class MailerController extends Controller
 
                 }
 
-                break;
+            break;
+            case self::USER_WAITING_FOR_ACCEPTATION:
+
+                $notAcceptedFirms = NotAcceptedFirms::find()->where([
+                    'NotificationSent' => 0
+                ])->all();
+
+                foreach ($notAcceptedFirms as $notAcceptedFirm) {
+
+                    $adminUser = new \common\models\User();
+                    $adminUser->Email = Yii::$app->params['adminEmail'];
+                    $result = MailerController::createMessage($adminUser, MailerController::USER_WAITING_FOR_ACCEPTATION, [
+                        'newUser' => $notAcceptedFirm->user,
+                        'userType' => $notAcceptedFirm->user->status == 1 ? \Yii::t('common', 'User account is confirmed.') : \Yii::t('common', 'User account is confirmed.'),
+                        'firm' => $notAcceptedFirm
+                    ]);
+
+
+                    if ($result) {
+                        $notAcceptedFirm->NotificationSent = 1;
+                        $notAcceptedFirm->save(false, ['NotificationSent']);
+
+                        echo sprintf("Email to user %s added to queue in category %s.\n", $notAcceptedFirm->user->publicIdentity, self::USER_WAITING_FOR_ACCEPTATION);
+                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $notAcceptedFirm->user->publicIdentity, self::USER_WAITING_FOR_ACCEPTATION), 'mailer');
+
+                    }
+
+                }
+
+
+            break;
 
 
         }
@@ -297,9 +328,7 @@ class MailerController extends Controller
 
         $content = Yii::$app->setting->get('email.content.' . $type);
 
-        $params = ArrayHelper::merge(
-            $params, ['user' => $user]
-        );
+        $params = ArrayHelper::merge($params, ['user' => $user]);
 
         $content = ShortcutProcessor::replaceShortcuts($content, $params);
         $message->body = $content;
