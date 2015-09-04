@@ -277,7 +277,11 @@ class MailerController extends Controller
             break;
             case self::USER_WAITING_FOR_ACCEPTATION:
 
-                $notAcceptedFirms = NotAcceptedFirms::find()->where([
+                $notAcceptedFirms = NotAcceptedFirms::find()->with(['user' => function($query){
+                    return $query->where([
+                        '{{%user%}}.status' => User::STATUS_ACTIVE
+                    ]);
+                }])->where([
                     'NotificationSent' => 0
                 ])->all();
 
@@ -287,7 +291,7 @@ class MailerController extends Controller
                     $adminUser->Email = Yii::$app->params['adminEmail'];
                     $result = MailerController::createMessage($adminUser, MailerController::USER_WAITING_FOR_ACCEPTATION, [
                         'newUser' => $notAcceptedFirm->user,
-                        'userType' => $notAcceptedFirm->user->status == 1 ? \Yii::t('common', 'User account is confirmed.') : \Yii::t('common', 'User account is confirmed.'),
+                        'userType' => $notAcceptedFirm->user->status == 1 ? \Yii::t('common', 'User account is confirmed.') : \Yii::t('common', 'User account is not confirmed.'),
                         'firm' => $notAcceptedFirm
                     ]);
 
