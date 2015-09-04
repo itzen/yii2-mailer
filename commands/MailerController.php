@@ -279,7 +279,7 @@ class MailerController extends Controller
 
                 $notAcceptedFirms = NotAcceptedFirms::find()->with(['user' => function($query){
                     return $query->where([
-                        '{{%user%}}.status' => User::STATUS_ACTIVE
+                        '{{%User%}}.status' => User::STATUS_ACTIVE
                     ]);
                 }])->where([
                     'NotificationSent' => 0
