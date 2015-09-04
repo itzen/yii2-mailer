@@ -291,7 +291,7 @@ class MailerController extends Controller
                     $adminUser->Email = Yii::$app->params['adminEmail'];
                     $result = MailerController::createMessage($adminUser, MailerController::USER_WAITING_FOR_ACCEPTATION, [
                         'newUser' => $notAcceptedFirm->user,
-                        'userType' => $notAcceptedFirm->user->status == 1 ? \Yii::t('common', 'User account is confirmed.') : \Yii::t('common', 'User account is not confirmed.'),
+                        'userType' => ($notAcceptedFirm->user!== null && $notAcceptedFirm->user->status == 1) ? \Yii::t('common', 'User account is confirmed.') : \Yii::t('common', 'User account is not confirmed.'),
                         'firm' => $notAcceptedFirm
                     ]);
 
