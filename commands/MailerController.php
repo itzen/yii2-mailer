@@ -277,7 +277,7 @@ class MailerController extends Controller
             break;
             case self::USER_WAITING_FOR_ACCEPTATION:
 
-                $notAcceptedFirms = NotAcceptedFirms::find()->with(['user' => function($query){
+                $notAcceptedFirms = NotAcceptedFirms::find()->joinWith(['user' => function($query){
                     return $query->where([
                         '{{%User%}}.status' => User::STATUS_ACTIVE
                     ]);
