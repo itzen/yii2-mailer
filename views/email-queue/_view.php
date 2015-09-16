@@ -53,7 +53,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'max_attempts',
             'attempt',
             //'priority',
-            //'status',
+            'statusName',
             'sent_time:datetime',
             'create_time:datetime',
             'update_time:datetime',

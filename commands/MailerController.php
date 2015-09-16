@@ -30,7 +30,6 @@ class MailerController extends Controller
     const USER_WAITING_FOR_ACCEPTATION = "UserWaitingForAcceptation";
     const TYPE_AFTER_CANCEL_ACCEPT_MANUAL_PAYMENT = "AfterCancelAcceptManualPayment";
 
-    const TYPE_AFTER_NEW_USER_INVITATION = "AfterNewUserInvitation";
     const TYPE_AFTER_USER_ACCEPTED_INVITATION = "AfterUserAcceptedInvitation";
     const TYPE_AFTER_AFFILIATE_USER_REGISTER = "AfterAffiliateUserRegister";
     const TYPE_AFTER_ACCEPT_FIRM = "AfterAcceptFirm";
@@ -227,6 +226,11 @@ class MailerController extends Controller
                             'id' => $invitationID,
                             'token' => $invitation->hash
                         ]),
+//                        'acceptUrl' => Yii::$app->urlManagerFrontend->createAbsoluteUrl([
+//                            '/affiliates/affiliates/accept',
+//                            'fid' => $fromFirm->ID,
+//                            'iid' => $invitationID
+//                        ]),
                     ]);
 
                     if ($result === true) {
@@ -277,11 +281,13 @@ class MailerController extends Controller
             break;
             case self::USER_WAITING_FOR_ACCEPTATION:
 
-                $notAcceptedFirms = NotAcceptedFirms::find()->joinWith(['user' => function($query){
-                    return $query->where([
-                        '{{%User%}}.status' => User::STATUS_ACTIVE
-                    ]);
-                }])->where([
+                $notAcceptedFirms = NotAcceptedFirms::find()->joinWith([
+                    'user' => function ($query) {
+                        return $query->where([
+                            '{{%User%}}.status' => User::STATUS_ACTIVE
+                        ]);
+                    }
+                ])->where([
                     'NotificationSent' => 0
                 ])->all();
 
@@ -291,7 +297,7 @@ class MailerController extends Controller
                     $adminUser->Email = Yii::$app->params['adminEmail'];
                     $result = MailerController::createMessage($adminUser, MailerController::USER_WAITING_FOR_ACCEPTATION, [
                         'newUser' => $notAcceptedFirm->user,
-                        'userType' => ($notAcceptedFirm->user!== null && $notAcceptedFirm->user->status == 1) ? \Yii::t('common', 'User account is confirmed.') : \Yii::t('common', 'User account is not confirmed.'),
+                        'userType' => ($notAcceptedFirm->user !== null && $notAcceptedFirm->user->status == 1) ? \Yii::t('common', 'User account is confirmed.') : \Yii::t('common', 'User account is not confirmed.'),
                         'firm' => $notAcceptedFirm
                     ]);
 
@@ -341,7 +347,10 @@ class MailerController extends Controller
         $message->attempt = 0;
         $message->priority = 5;
         $message->status = EmailQueue::STATUS_NOT_SENT;
-
+        if (strstr($message->body, '[[{')) {
+            Yii::error(\Yii::t('common', 'Not all shortcuts in mail have been replaced.') . \yii\helpers\VarDumper::dumpAsString([$message, $user, $type, $params], 10, true));
+            $message->status = EmailQueue::STATUS_FAILED;
+        }
         if ($message->save(false)) {
             return true;
         } else {

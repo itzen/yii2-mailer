@@ -91,7 +91,7 @@ $this->registerJs('jQuery("#pjax-grid").on("submit", ".kv-expanded-row div form"
             // 'max_attempts',
             // 'attempt',
             // 'priority',
-            // 'status',
+             'statusName',
             // 'sent_time',
             // 'create_time',
             // 'update_time',
