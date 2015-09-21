@@ -162,8 +162,8 @@ class MailerController extends Controller
                 foreach ($firms as $firm) {
                     if ($firm->IsAccountingOffice) {
                         $subscriptionInfo = \Yii::t('common', 'Remaining invoice to send: {invoiceSend}, Remaining invoice to receive {invoiceReceived}.', [
-                            'invoiceSend' => $firm->lastSubscription->invoiceSend,
-                            'invoiceReceived' => $firm->lastSubscription->invoiceReceived,
+                            'invoiceSend' => $firm->lastSubscription->invoiceSend == null ? \Yii::t('frontend', 'unlimited') : $firm->lastSubscription->invoiceSend,
+                            'invoiceReceived' => $firm->lastSubscription->invoiceReceived == null ? \Yii::t('frontend', 'unlimited') : $firm->lastSubscription->invoiceReceived,
 
                         ]);
                     } else {
@@ -226,11 +226,11 @@ class MailerController extends Controller
                             'id' => $invitationID,
                             'token' => $invitation->hash
                         ]),
-//                        'acceptUrl' => Yii::$app->urlManagerFrontend->createAbsoluteUrl([
-//                            '/affiliates/affiliates/accept',
-//                            'fid' => $fromFirm->ID,
-//                            'iid' => $invitationID
-//                        ]),
+                        'acceptUrl' => Yii::$app->urlManagerFrontend->createAbsoluteUrl([
+                            '/affiliates/affiliates/accept',
+                            'fid' => $fromFirm->ID,
+                            'iid' => $invitationID
+                        ]),
                     ]);
 
                     if ($result === true) {
@@ -348,7 +348,12 @@ class MailerController extends Controller
         $message->priority = 5;
         $message->status = EmailQueue::STATUS_NOT_SENT;
         if (strstr($message->body, '[[{')) {
-            Yii::error(\Yii::t('common', 'Not all shortcuts in mail have been replaced.') . \yii\helpers\VarDumper::dumpAsString([$message, $user, $type, $params], 10, true));
+            Yii::error(\Yii::t('common', 'Not all shortcuts in mail have been replaced.') . \yii\helpers\VarDumper::dumpAsString([
+                    $message,
+                    $user,
+                    $type,
+                    $params
+                ], 10, true));
             $message->status = EmailQueue::STATUS_FAILED;
         }
         if ($message->save(false)) {
