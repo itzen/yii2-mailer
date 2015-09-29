@@ -3,6 +3,7 @@
 namespace itzen\mailer\models;
 
 use common\models\User;
+use itzen\mailer\Mailer;
 use itzen\setting\models\Setting;
 use kartik\grid\GridView;
 use Yii;
@@ -192,11 +193,9 @@ class EmailQueue extends \yii\db\ActiveRecord
         $sent = false;
         $this->attempt++;
         try {
-
-
-
-
-            $message = Yii::$app->mailer->compose(
+            /** @var Mailer $mailer */
+            $mailer = Yii::$app->mailer;
+            $message = $mailer->compose(
                 ['html' => '@common/mail/standard'],
                 [
                     'content' => $this->body,
@@ -216,6 +215,7 @@ class EmailQueue extends \yii\db\ActiveRecord
             }
 
             if ($message->send()) {
+                $mailer->appendMessageToSent($message);
                 $sent = true;
             }
         }

@@ -42,6 +42,7 @@ class MailerController extends Controller
     const TYPE_AFTER_NEW_FIRM_CREATED = "AfterNewFirmCreated";
     const TYPE_MANUAL_PAYMENT = "ManualPayment";
     const TYPE_ONLINE_PAYMENT = "OnlinePayment";
+    const TYPE_ONLINE_PAYMENT_PAYER = "OnlinePaymentPayer";
 
     const TYPE_SPECIAL_OFFER = "SpecialOffer";
     const TYPE_SUBSCRIPTION_LOW_NOTIFICATION = "SubscriptionLowNotification";
