@@ -61,7 +61,8 @@ class MailerController extends Controller
      * @param int $limit
      * @param string|null $category
      */
-    public function actionSend($limit = 5, $category = null) {
+    public function actionSend($limit = 5, $category = null)
+    {
         /** @var EmailQueue[] $emailQueue */
         $emailQueue = EmailQueue::find()->where(['status' => EmailQueue::STATUS_NOT_SENT,])->andWhere('attempt<max_attempts')->orderBy(['priority' => SORT_ASC])->limit($limit)->all();
         $emailsCount = count($emailQueue);
@@ -84,7 +85,8 @@ class MailerController extends Controller
         ]);
     }
 
-    public function addEmailsToQueue($type) {
+    public function addEmailsToQueue($type)
+    {
 
     }
 
@@ -92,7 +94,8 @@ class MailerController extends Controller
      * Collects emails which should be send and adds it on queue for later sending
      * @param string $type
      */
-    public function actionAddEmailsByType($type = self::TYPE_AFTER_REGISTRATION) {
+    public function actionAddEmailsByType($type = self::TYPE_AFTER_REGISTRATION)
+    {
         switch ($type) {
             case self::TYPE_AFTER_REGISTRATION:
                 $days = Yii::$app->setting->get('Days.' . self::TYPE_AFTER_REGISTRATION);
@@ -113,7 +116,7 @@ class MailerController extends Controller
                 //
                 //  SELECT * FROM [Emsi.InvoiceTest].[dbo].[User]  WHERE
                 //  DATEDIFF(d, CreatedDateUtc, GETDATE()) = 7
-            break;
+                break;
 
             case self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE:
                 $days = Yii::$app->setting->get('Days.' . self::TYPE_BEFORE_SUBSCRIPTION_EXPIRE);
@@ -191,7 +194,7 @@ class MailerController extends Controller
                 }
 
 
-            break;
+                break;
 
             case self::TYPE_FROM_INVITATION_TABLE:
 
@@ -212,6 +215,10 @@ class MailerController extends Controller
                     $user->Email = $invitation->ReceiverEmail;
                     $invitationID = $invitation->ID;
                     $fromFirm = $invitation->senderFirm;
+
+                    if ($invitation->receiverFirm != null && $invitation->receiverFirm->user != null) {
+                        $user = $invitation->receiverFirm->user;
+                    }
 
                     $result = self::createMessage($user, 'InvitationType_' . $invitation->Type_ID, [
                         'fromFirm' => $fromFirm,
@@ -245,7 +252,7 @@ class MailerController extends Controller
 
 
                 }
-            break;
+                break;
 
             case self::TYPE_FROM_INVITATION_ACCOUNTING_OFFICE_TABLE:
                 /** @var InvitationAccountOffice[] $invitationsToSend */
@@ -261,6 +268,13 @@ class MailerController extends Controller
                     $invitationID = $invitation->ID;
                     $fromFirm = $invitation->senderFirm;
 
+                    if ($invitation->SenderNip == $invitation->ReceiverNip) {
+                        $invitation->Status_ID = InvitationAccountOfficeStatus::STATUS_ACCEPTED;
+                        $invitation->changeStatus();
+                        echo sprintf("Accounting office accepted from %s in category %s.\n", $invitation->SenderNip, self::TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE);
+                        Yii::info(sprintf("Accounting office accepted from %s in category %s.\n", $invitation->SenderNip, self::TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE), 'mailer');
+                        return;
+                    }
 
                     $result = MailerController::createMessage($user, self::TYPE_AFTER_CHANGE_ACCOUNTING_OFFICE, [
                         'date' => \Yii::t('common', '{date, date, long}', ['date' => strtotime($invitation->AccountingOfficeStartDate)]),
@@ -279,7 +293,7 @@ class MailerController extends Controller
 
                 }
 
-            break;
+                break;
             case self::USER_WAITING_FOR_ACCEPTATION:
 
                 $notAcceptedFirms = NotAcceptedFirms::find()->joinWith([
@@ -315,7 +329,7 @@ class MailerController extends Controller
                 }
 
 
-            break;
+                break;
 
 
         }
@@ -326,7 +340,8 @@ class MailerController extends Controller
      * @param string $type
      * @return bool
      */
-    public static function createMessage($user, $type, $params = []) {
+    public static function createMessage($user, $type, $params = [])
+    {
         $message = new EmailQueue();
 
         $message->user_id = $user->ID;
