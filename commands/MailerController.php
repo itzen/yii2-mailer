@@ -164,31 +164,40 @@ class MailerController extends Controller
                 echo sprintf("Found %d emails for type: %s\n", count($firms), self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION);
 
                 foreach ($firms as $firm) {
+                    $subscriptionInfo = false;
                     if ($firm->IsAccountingOffice) {
-                        $subscriptionInfo = \Yii::t('common', 'Remaining invoice to send: {invoiceSend}, Remaining invoice to receive {invoiceReceived}.', [
-                            'invoiceSend' => $firm->lastSubscription->invoiceSend == null ? \Yii::t('frontend', 'unlimited') : $firm->lastSubscription->invoiceSend,
-                            'invoiceReceived' => $firm->lastSubscription->invoiceReceived == null ? \Yii::t('frontend', 'unlimited') : $firm->lastSubscription->invoiceReceived,
+                        if ($firm->lastSubscription->Price == 0) {
+                            $subscriptionInfo = \Yii::t('common', 'Remaining invoice to receive {invoiceReceived}', [
+                                    'invoiceReceived' => $firm->lastSubscription->invoiceReceived == null ? \Yii::t('frontend', 'unlimited') : $firm->lastSubscription->invoiceReceived,
 
-                        ]);
+                                ]) . '.';
+                        }
                     } else {
-                        $subscriptionInfo = \Yii::t('common', 'Remaining invoice to accounting office: {invoiceToAc}.', [
-                            'invoiceToAc' => $firm->lastSubscription->invoiceToAc,
-                        ]);
+                        $subscriptionInfo = \Yii::t('common', 'Remaining invoice to send {invoiceSend}', [
+                                'invoiceSend' => $firm->lastSubscription->invoiceSend == null ? \Yii::t('frontend', 'unlimited') : $firm->lastSubscription->invoiceSend,
+                            ]) . ',<br/>' .
+                            \Yii::t('common', 'Remaining invoice to receive {invoiceReceived}', [
+                                'invoiceReceived' => $firm->lastSubscription->invoiceReceived == null ? \Yii::t('frontend', 'unlimited') : $firm->lastSubscription->invoiceReceived,
+                            ]) . ',<br/>' . \Yii::t('common', 'Remaining invoice to accounting office: {invoiceToAc}', [
+                                'invoiceToAc' => $firm->lastSubscription->invoiceToAc,
+                            ]) . '.';
                     }
 
-                    $result = $this->createMessage($firm->user, self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION, [
-                        'subscriptionInfo' => $subscriptionInfo,
-                        'firm' => $firm,
-                        'lastSubscription' => $firm->lastSubscription,
-                    ]);
+                    if ($subscriptionInfo) {
+                        $result = $this->createMessage($firm->user, self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION, [
+                            'subscriptionInfo' => $subscriptionInfo,
+                            'firm' => $firm,
+                            'lastSubscription' => $firm->lastSubscription,
+                        ]);
 
-                    if ($result) {
-                        echo sprintf("Email to user %s added to queue in category %s.\n", $firm->user->publicIdentity, self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION);
-                        Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $firm->user->publicIdentity, self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION), 'mailer');
+                        if ($result) {
+                            echo sprintf("Email to user %s added to queue in category %s.\n", $firm->user->publicIdentity, self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION);
+                            Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $firm->user->publicIdentity, self::TYPE_SUBSCRIPTION_LOW_NOTIFICATION), 'mailer');
 
-                        $subscription = $firm->lastSubscription;
-                        $subscription->notificationSent = 1;
-                        $subscription->save(false);
+                            $subscription = $firm->lastSubscription;
+                            $subscription->notificationSent = 1;
+                            $subscription->save(false);
+                        }
                     }
 
                 }
