@@ -102,7 +102,9 @@ class MailerController extends Controller
                 $users = User::find()->where(['DATEDIFF(d, CreatedDateUtc, GETDATE())' => $days])->distinct()->all();
                 echo sprintf("Found %d emails for type: %s\n", count($users), self::TYPE_AFTER_REGISTRATION);
                 foreach ($users as $user) {
-                    $model = $this->createMessage($user, self::TYPE_AFTER_REGISTRATION);
+                    $model = $this->createMessage($user, self::TYPE_AFTER_REGISTRATION, [
+                        'firm' => $user->firstNotAcceptedFirm,
+                    ]);
                     if ($model === true) {
                         echo sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_REGISTRATION);
                         Yii::info(sprintf("Email to user %s added to queue in category %s.\n", $user->publicIdentity, self::TYPE_AFTER_REGISTRATION), 'mailer');
